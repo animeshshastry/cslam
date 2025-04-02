@@ -22,7 +22,7 @@ class LoopClosureDetection(Node):
             parameters=[('frontend.similarity_threshold', 0.9),
                         ('frontend.global_descriptor_technique', 'cosplace'),
                         ('frontend.netvlad.pca_checkpoint', ''), ('frontend.nn_checkpoint', 'models/resnet18_64.pth'),
-                        ('robot_id', 0), ('max_nb_robots', 10),
+                        ('robot_id', 0), ('robot_names', ['']),
                         ('frontend.inter_robot_loop_closure_budget', 5),
                         ('frontend.inter_robot_detection_period_sec', 5),
                         ('frontend.nb_best_matches', 10), ('frontend.image_crop_size', 376),
@@ -54,7 +54,7 @@ class LoopClosureDetection(Node):
         self.params['frontend.nn_checkpoint'] = self.get_parameter(
             'frontend.nn_checkpoint').value
         self.params['robot_id'] = self.get_parameter('robot_id').value
-        self.params['max_nb_robots'] = self.get_parameter('max_nb_robots').value
+        self.params['robot_names'] = self.get_parameter('robot_names').value
         self.params['frontend.inter_robot_loop_closure_budget'] = self.get_parameter(
             'frontend.inter_robot_loop_closure_budget').value
         self.params['frontend.enable_intra_robot_loop_closures'] = self.get_parameter(

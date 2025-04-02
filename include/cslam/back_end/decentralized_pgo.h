@@ -286,6 +286,7 @@ namespace cslam
 
     private:
         rclcpp::Node * node_;
+        std::vector<std::string> robot_names_;
         std::string odom_tf_reference_frame_;
         std::unique_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcaster_;
 

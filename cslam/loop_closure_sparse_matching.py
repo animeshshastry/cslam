@@ -25,7 +25,10 @@ class LoopClosureSparseMatching(object):
         else:
             self.local_nnsm = NearestNeighborsMatching()
         self.other_robots_nnsm = {}
-        for i in range(self.params['max_nb_robots']):
+        
+        self.max_nb_robots = len(self.params['robot_names'])
+        
+        for i in range(self.max_nb_robots):
             if i != self.params['robot_id']:
                 if self.params["frontend.sensor_type"] == "lidar":
                     self.other_robots_nnsm[i] = ScanContextMatching()
@@ -33,7 +36,7 @@ class LoopClosureSparseMatching(object):
                     self.other_robots_nnsm[i] = NearestNeighborsMatching()
         # Initialize candidate selection algorithm
         self.candidate_selector = AlgebraicConnectivityMaximization(
-            self.params['robot_id'], self.params['max_nb_robots'])
+            self.params['robot_id'], self.max_nb_robots)
 
     def add_local_global_descriptor(self, embedding, keyframe_id):
         """ Add a local keyframe for matching
@@ -46,7 +49,7 @@ class LoopClosureSparseMatching(object):
         tensor = torch.from_numpy(embedding.astype(np.float32))
         self.local_nnsm.add_item(tensor, keyframe_id)
         self.current_kf = keyframe_id
-        for i in range(self.params['max_nb_robots']):
+        for i in range(self.max_nb_robots):
             if i != self.params['robot_id']:
                 kf, similarity = self.other_robots_nnsm[i].search_best(tensor)
                 if kf is not None:

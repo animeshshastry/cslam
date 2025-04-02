@@ -12,12 +12,13 @@ class NeighborManager():
         self.node = node
         self.params = params
         self.robot_id = self.params['robot_id']
-        self.max_nb_robots = self.params['max_nb_robots']
+        self.robot_names = self.params['robot_names']
+        self.max_nb_robots = len(self.robot_names)
         self.neighbors_monitors = {}
         for rid in range(self.max_nb_robots):
             if rid != self.robot_id:
                 self.neighbors_monitors[rid] = NeighborMonitor(
-                    self.node, rid, self.
+                    self.node, rid, self.robot_names[rid], self.
                     params['neighbor_management.enable_neighbor_monitoring'],
                     self.params['neighbor_management.init_delay_sec'],
                     self.params['neighbor_management.max_heartbeat_delay_sec'])

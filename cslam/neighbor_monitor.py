@@ -5,7 +5,7 @@ class NeighborMonitor():
     """Monitors if a neighboring robot is in range
     """
 
-    def __init__(self, node, rid, is_enabled, init_delay_sec, max_delay_sec):
+    def __init__(self, node, rid, robot_name, is_enabled, init_delay_sec, max_delay_sec):
         """Initialization
         Args:
             id (int): Robot ID
@@ -25,7 +25,7 @@ class NeighborMonitor():
         self.last_match_sent = -1
 
         self.heartbeat_subscriber = self.node.create_subscription(
-            UInt32, '/r' + str(rid) + '/' + 'cslam/heartbeat',
+            UInt32, '/' + robot_name + '/cslam/heartbeat',
             self.heartbeat_callback, 10)
 
     def heartbeat_callback(self, msg):

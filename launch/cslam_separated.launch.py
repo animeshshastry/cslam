@@ -17,12 +17,10 @@ def launch_setup(context, *args, **kwargs):
                                parameters=[
                                    ParameterFile(LaunchConfiguration('base_params').perform(context), allow_substs=True),
                                    ParameterFile(LaunchConfiguration('robot_params').perform(context), allow_substs=True), {
-                                       "robot_id": LaunchConfiguration('robot_id'),
-                                       "max_nb_robots": LaunchConfiguration('max_nb_robots'),
-                                       "tf_prefix": LaunchConfiguration('tf_prefix'),
+                                       'robot_id': LaunchConfiguration('robot_id'),
+                                       'robot_names': LaunchConfiguration('robot_names'),
                                    }
                                ],
-                               #prefix=['stdbuf -o L'],
                                arguments=['--ros-args','--log-level',LaunchConfiguration('log_level'),'--log-level','rcl:=INFO', '--log-level','rmw_zenoh_cpp:=FATAL'],
                                output='screen',
                                namespace=LaunchConfiguration('namespace'))
@@ -33,9 +31,8 @@ def launch_setup(context, *args, **kwargs):
                             parameters=[
                                 ParameterFile(LaunchConfiguration('base_params').perform(context), allow_substs=True),
                                 ParameterFile(LaunchConfiguration('robot_params').perform(context), allow_substs=True),  {
-                                    "robot_id": LaunchConfiguration('robot_id'),
-                                    "max_nb_robots": LaunchConfiguration('max_nb_robots'),
-                                    "tf_prefix": LaunchConfiguration('tf_prefix'),
+                                    'robot_id': LaunchConfiguration('robot_id'),
+                                    'tf_prefix': LaunchConfiguration('tf_prefix'),
                                 }
                             ],
                             output='screen',
@@ -48,11 +45,11 @@ def launch_setup(context, *args, **kwargs):
                                    parameters=[
                                        ParameterFile(LaunchConfiguration('base_params').perform(context), allow_substs=True),
                                         ParameterFile(LaunchConfiguration('robot_params').perform(context), allow_substs=True),  {
-                                           "robot_id": LaunchConfiguration('robot_id'),
-                                           "max_nb_robots": LaunchConfiguration('max_nb_robots'),
-                                           "evaluation.enable_simulated_rendezvous": LaunchConfiguration('enable_simulated_rendezvous'),
-                                           "evaluation.rendezvous_schedule_file": LaunchConfiguration('rendezvous_schedule_file'),
-                                           "tf_prefix": LaunchConfiguration('tf_prefix'),
+                                            'robot_id': LaunchConfiguration('robot_id'),
+                                            'robot_names': LaunchConfiguration('robot_names'),
+                                            'evaluation.enable_simulated_rendezvous': LaunchConfiguration('enable_simulated_rendezvous'),
+                                            'evaluation.rendezvous_schedule_file': LaunchConfiguration('rendezvous_schedule_file'),
+                                            'tf_prefix': LaunchConfiguration('tf_prefix'),
                                        }
                                    ],
                                    output='screen',
@@ -66,16 +63,10 @@ def launch_setup(context, *args, **kwargs):
                                 namespace=LaunchConfiguration('namespace'),
                                 parameters=[
                                 ParameterFile(LaunchConfiguration('base_params').perform(context), allow_substs=True),
-                                ParameterFile(LaunchConfiguration('robot_params').perform(context), allow_substs=True),  {
-                                        "robot_id": LaunchConfiguration('robot_id'),
-                                        "max_nb_robots": LaunchConfiguration('max_nb_robots'),
-                                        "evaluation.enable_simulated_rendezvous": LaunchConfiguration('enable_simulated_rendezvous'),
-                                        "evaluation.rendezvous_schedule_file": LaunchConfiguration('rendezvous_schedule_file'),
-                                    }
+                                ParameterFile(LaunchConfiguration('robot_params').perform(context), allow_substs=True),
                                 ],
                                 arguments=['--ros-args','--log-level',LaunchConfiguration('log_level'),'--log-level','rcl:=INFO', '--log-level','rmw_zenoh_cpp:=FATAL'],
                                output='screen',
-                               #prefix="pprofile -o cslam.pprofile",
                             )
 
     return [
@@ -92,20 +83,20 @@ def generate_launch_description():
         DeclareLaunchArgument('namespace', default_value='', description=''),
         DeclareLaunchArgument('robot_id', default_value='0', description=''),
         DeclareLaunchArgument('tf_prefix', default_value=PythonExpression(['("', LaunchConfiguration('namespace'), '".strip("/") + "/").lstrip("/")'])),
-        DeclareLaunchArgument('max_nb_robots', default_value='2', description=''),
+        DeclareLaunchArgument('robot_names', default_value="['quadrotor','warthog']", description=''),
         DeclareLaunchArgument('profile', default_value='false', description=''),
-        DeclareLaunchArgument('config_path', default_value='/config/', description=''),
+        DeclareLaunchArgument('config_path', default_value=os.path.join(get_package_share_directory('multiagent_launcher'), 'config', 'cslam_configs'), description=''),
         DeclareLaunchArgument('base_config', default_value='cslam_shared.yaml', description=''),
-        DeclareLaunchArgument('robot_config', default_value='hl2_stereo.yaml', description=''),
+        DeclareLaunchArgument('robot_config', default_value='quadrotor_rgbd.yaml', description=''),
         DeclareLaunchArgument('base_params',
                               default_value=[
-                                  LaunchConfiguration('config_path'),
+                                  LaunchConfiguration('config_path'),'/',
                                   LaunchConfiguration('base_config')
                               ],
                               description=''),
         DeclareLaunchArgument('robot_params',
                         default_value=[
-                            LaunchConfiguration('config_path'),
+                            LaunchConfiguration('config_path'),'/',
                             LaunchConfiguration('robot_config')
                         ],
                         description=''),

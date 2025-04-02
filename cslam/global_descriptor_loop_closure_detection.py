@@ -105,12 +105,11 @@ class GlobalDescriptorLoopClosureDetection(object):
             InterRobotLoopClosure, '/cslam/inter_robot_loop_closure',
             self.receive_inter_robot_loop_closure, 100)
 
-        self.local_descriptors_request_publishers = {}
-        for i in range(self.params['max_nb_robots']):
-            self.local_descriptors_request_publishers[
-                i] = self.node.create_publisher(
-                    LocalDescriptorsRequest,
-                    '/r' + str(i) + '/cslam/local_descriptors_request', 100)
+        self.local_descriptors_request_publishers = []
+        for robot_name in self.params['robot_names']:
+            self.local_descriptors_request_publishers.append(
+                    self.node.create_publisher(LocalDescriptorsRequest, '/' + robot_name + '/cslam/local_descriptors_request', 100)
+            )
 
         # Listen for changes in node liveliness
         self.neighbor_manager = NeighborManager(

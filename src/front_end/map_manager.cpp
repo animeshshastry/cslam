@@ -52,7 +52,7 @@ MapManager::MapManager(rclcpp::NodeOptions ops) : Node("map_manager", ops.start_
     declare_parameter<std::string>("tf_prefix", "");
     declare_parameter<std::string>("frontend.base_frame", "base_link");
     declare_parameter<std::string>("frontend.odom_frame", "odom");
-    declare_parameter<int>("max_nb_robots", 1);
+    // declare_parameter<int>("max_nb_robots", 1);
     declare_parameter<int>("robot_id", 0);
     declare_parameter<int>("frontend.map_manager_process_period_ms", 100);
     declare_parameter<std::string>("frontend.sensor_type", "stereo");
@@ -95,7 +95,7 @@ MapManager::MapManager(rclcpp::NodeOptions ops) : Node("map_manager", ops.start_
                         map_manager_process_period_ms_);
       // Parameters
     get_parameter("frontend.inter_pnp_min_inliers", min_inliers_);
-    get_parameter("max_nb_robots", max_nb_robots_);
+    // get_parameter("max_nb_robots", max_nb_robots_);
     get_parameter("robot_id", robot_id_);
     get_parameter("frontend.max_queue_size", max_queue_size_);
     get_parameter("frontend.min_3d_keypoints", min_3d_keypoints_);
@@ -951,7 +951,7 @@ void MapManager::send_visualization_pointcloud(const std::shared_ptr<rtabmap::Se
   keyframe_pointcloud_msg.keyframe_id = sensor_data->id();
   std_msgs::msg::Header header;
   header.stamp = now();
-  header.frame_id = MAP_FRAME_ID(robot_id_);
+  header.frame_id = get_parameter("tf_prefix").as_string() + get_parameter("frontend.map_frame").as_string();;
   auto pointcloud_msg = create_colored_pointcloud(sensor_data, header);
 
   if (visualization_voxel_size_ > 0.0)

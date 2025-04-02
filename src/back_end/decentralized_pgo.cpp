@@ -24,7 +24,7 @@ static const auto default_noise_model_ = noiseModel::Diagonal::Sigmas(
 DecentralizedPGO::DecentralizedPGO(rclcpp::Node * node)
     : node_(node), max_waiting_time_sec_(60, 0)
 {
-  node_->get_parameter("max_nb_robots", max_nb_robots_);
+  node_->get_parameter("robot_names", robot_names_);
   node_->get_parameter("robot_id", robot_id_);
   node_->get_parameter("backend.pose_graph_optimization_start_period_ms",
                        pose_graph_optimization_start_period_ms_);
@@ -113,13 +113,21 @@ DecentralizedPGO::DecentralizedPGO(rclcpp::Node * node)
       node_->create_publisher<cslam_common_interfaces::msg::OptimizationResult>(
           "cslam/debug_optimization_result", 100);
 
-  for (unsigned int i = 0; i < max_nb_robots_; i++)
-  {
+  for (unsigned int i = 0; i < robot_names_.size(); i++) {
     optimized_estimates_publishers_.insert(
-        {i, node_->create_publisher<
-                cslam_common_interfaces::msg::OptimizationResult>(
-                "/r" + std::to_string(i) + "/cslam/optimized_estimates", 100)});
+            {i, node_->create_publisher<
+                    cslam_common_interfaces::msg::OptimizationResult>(
+                    "/" + robot_names_[i] + "/cslam/optimized_estimates", 100)});
   }
+  max_nb_robots_ = robot_names_.size();
+
+  // for (unsigned int i = 0; i < max_nb_robots_; i++)
+  // {
+  //   optimized_estimates_publishers_.insert(
+  //       {i, node_->create_publisher<
+  //               cslam_common_interfaces::msg::OptimizationResult>(
+  //               "/r" + std::to_string(i) + "/cslam/optimized_estimates", 100)});
+  // }
 
   optimized_estimates_subscriber_ = node_->create_subscription<
       cslam_common_interfaces::msg::OptimizationResult>(
@@ -129,7 +137,7 @@ DecentralizedPGO::DecentralizedPGO(rclcpp::Node * node)
 
   optimized_pose_estimate_publisher_ = node_->create_publisher<
                 geometry_msgs::msg::PoseStamped>(
-                "/r" + std::to_string(robot_id_) + "/cslam/current_pose_estimate", 100);
+                "cslam/current_pose_estimate", 100);
 
   optimizer_state_publisher_ =
       node_->create_publisher<cslam_common_interfaces::msg::OptimizerState>(
@@ -156,14 +164,20 @@ DecentralizedPGO::DecentralizedPGO(rclcpp::Node * node)
       std::bind(&DecentralizedPGO::current_neighbors_callback, this,
                 std::placeholders::_1));
 
-  // PoseGraph ROS 2 objects
-  for (unsigned int i = 0; i < max_nb_robots_; i++)
-  {
+  for (unsigned int i = 0; i < robot_names_.size(); i++) {
     get_pose_graph_publishers_.insert(
-        {i, node_->create_publisher<cslam_common_interfaces::msg::RobotIds>(
-                "/r" + std::to_string(i) + "/cslam/get_pose_graph", 100)});
+            {i, node_->create_publisher<cslam_common_interfaces::msg::RobotIds>(
+                    "/" + robot_names_[i] + "/cslam/get_pose_graph", 100)});
     received_pose_graphs_.insert({i, false});
   }
+  // PoseGraph ROS 2 objects
+  // for (unsigned int i = 0; i < max_nb_robots_; i++)
+  // {
+  //   get_pose_graph_publishers_.insert(
+  //       {i, node_->create_publisher<cslam_common_interfaces::msg::RobotIds>(
+  //               "/r" + std::to_string(i) + "/cslam/get_pose_graph", 100)});
+  //   received_pose_graphs_.insert({i, false});
+  // }
 
   get_pose_graph_subscriber_ =
       node_->create_subscription<cslam_common_interfaces::msg::RobotIds>(
