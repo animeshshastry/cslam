@@ -1,10 +1,10 @@
 #include "cslam/back_end/decentralized_pgo.h"
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
-#define MAP_FRAME_ID(id) "r" + std::to_string(id) + "/map"
-#define CURRENT_FRAME_ID(id) "r" + std::to_string(id) + "/current_pose"
-#define LATEST_OPTIMIZED_FRAME_ID(id) "r" + std::to_string(id) + "/latest_optimized_pose"
-#define LATEST_LOCAL_MAP(id) "r" + std::to_string(id) + "/local_map"
+// #define MAP_FRAME_ID(id) "r" + std::to_string(id) + "/map"
+// #define CURRENT_FRAME_ID(id) "r" + std::to_string(id) + "/current_pose"
+// #define LATEST_OPTIMIZED_FRAME_ID(id) "r" + std::to_string(id) + "/latest_optimized_pose"
+// #define LATEST_LOCAL_MAP(id) "r" + std::to_string(id) + "/local_map"
 
 using namespace cslam;
 using namespace gtsam;
@@ -30,8 +30,6 @@ DecentralizedPGO::DecentralizedPGO(rclcpp::Node * node)
                        pose_graph_optimization_start_period_ms_);
   node_->get_parameter("backend.pose_graph_optimization_loop_period_ms",
                        pose_graph_optimization_loop_period_ms_);
-  node_->get_parameter("backend.odom_tf_reference_frame",
-                       odom_tf_reference_frame_);
   node_->get_parameter("backend.enable_broadcast_tf_frames",
                        enable_broadcast_tf_frames_);
   node_->get_parameter("neighbor_management.heartbeat_period_sec", heartbeat_period_sec_);
@@ -49,15 +47,25 @@ DecentralizedPGO::DecentralizedPGO(rclcpp::Node * node)
                        enable_visualization_);
   node_->get_parameter("visualization.publishing_period_ms",
                        visualization_period_ms_);
-  node_->get_parameter("frontend.sensor_base_frame_id", base_frame_id_);
+  node_->get_parameter("frontend.sensor_base_frame", base_frame_);
+  node_->get_parameter("frontend.kf_frame", kf_frame_);
+  node_->get_parameter("frontend.kf_opt_frame", kf_opt_frame_);
+  node_->get_parameter("frontend.odom_frame", odom_frame_);
+  node_->get_parameter("frontend.map_frame", map_frame_);
 
   int max_waiting_param = 60;
   node_->get_parameter("backend.max_waiting_time_sec", max_waiting_param);
   max_waiting_time_sec_ = rclcpp::Duration(max_waiting_param, 0);
   node_->get_parameter("backend.solver", backend_linear_solver_);
 
-  odometry_subscriber_ =
-      node_->create_subscription<cslam_common_interfaces::msg::KeyframeOdom>(
+  for (unsigned int i = 0; i < robot_names_.size(); i++) {
+    MAP_FRAME_ID.push_back(robot_names_[i] + map_frame_);
+    CURRENT_FRAME_ID.push_back(robot_names_[i] + kf_frame_);
+    LATEST_OPTIMIZED_FRAME_ID.push_back(robot_names_[i] + kf_opt_frame_);
+    LATEST_LOCAL_MAP.push_back(robot_names_[i] + odom_frame_);
+  }
+
+  odometry_subscriber_ = node_->create_subscription<cslam_common_interfaces::msg::KeyframeOdom>(
           "cslam/keyframe_odom", 1000,
           std::bind(&DecentralizedPGO::odometry_callback, this,
                     std::placeholders::_1));
@@ -804,7 +812,7 @@ void DecentralizedPGO::update_transform_to_origin(const gtsam::Pose3 &pose)
   gtsam::LabeledSymbol first_symbol(GRAPH_LABEL, ROBOT_LABEL(robot_id_), 0);
   rclcpp::Time now = node_->get_clock()->now();
   origin_to_first_pose_.header.stamp = now;
-  origin_to_first_pose_.header.frame_id = MAP_FRAME_ID(origin_robot_id_);
+  origin_to_first_pose_.header.frame_id = MAP_FRAME_ID[origin_robot_id_];
   origin_to_first_pose_.pose = gtsam_pose_to_msg(pose);
   //tf2::doTransform(gtsam_pose_to_transform_msg(pose), origin_to_first_pose_.transform, base_transform_);
   // Update the reference frame
@@ -824,7 +832,7 @@ void DecentralizedPGO::update_transform_to_origin(const gtsam::Pose3 &pose)
 
   auto offset_msg = std::make_unique<geometry_msgs::msg::PoseStamped>();
   offset_msg->header.stamp = now;
-  offset_msg->header.frame_id = MAP_FRAME_ID(origin_robot_id_);
+  offset_msg->header.frame_id = MAP_FRAME_ID[origin_robot_id_];
   offset_msg->pose = gtsam_pose_to_msg(latest_optimized_pose_ * local_pose_at_latest_optimization_.inverse());
   odom_offset_publisher_->publish(std::move(offset_msg));
   //auto measurement = local_pose_at_latest_optimization_.inverse() * latest_optimized_pose_;
@@ -853,24 +861,24 @@ void DecentralizedPGO::broadcast_tf_callback()
 
   geometry_msgs::msg::TransformStamped latest_optimized_pose_msg;
   latest_optimized_pose_msg.header.stamp = now;
-  latest_optimized_pose_msg.header.frame_id = MAP_FRAME_ID(origin_robot_id_);
-  latest_optimized_pose_msg.child_frame_id = LATEST_OPTIMIZED_FRAME_ID(robot_id_);
+  latest_optimized_pose_msg.header.frame_id = MAP_FRAME_ID[origin_robot_id_];
+  latest_optimized_pose_msg.child_frame_id = LATEST_OPTIMIZED_FRAME_ID[robot_id_];
   latest_optimized_pose_msg.transform = gtsam_pose_to_transform_msg(
         latest_optimized_pose_);
   tfsToBroadcast.push_back(latest_optimized_pose_msg);
 
   geometry_msgs::msg::TransformStamped pose_offset;
   pose_offset.header.stamp = now;
-  pose_offset.header.frame_id = LATEST_OPTIMIZED_FRAME_ID(robot_id_);
-  pose_offset.child_frame_id = LATEST_LOCAL_MAP(robot_id_);
+  pose_offset.header.frame_id = LATEST_OPTIMIZED_FRAME_ID[robot_id_];
+  pose_offset.child_frame_id = LATEST_LOCAL_MAP[robot_id_];
   pose_offset.transform = gtsam_pose_to_transform_msg(local_pose_at_latest_optimization_.inverse());
   tfsToBroadcast.push_back(pose_offset);
 
   // latest optimized pose to latest local pose (odometry alone)
   geometry_msgs::msg::TransformStamped current_transform_msg;
   current_transform_msg.header.stamp = now;
-  current_transform_msg.header.frame_id = LATEST_LOCAL_MAP(robot_id_);
-  current_transform_msg.child_frame_id = CURRENT_FRAME_ID(robot_id_);
+  current_transform_msg.header.frame_id = LATEST_LOCAL_MAP[robot_id_];
+  current_transform_msg.child_frame_id = CURRENT_FRAME_ID[robot_id_];
   current_transform_msg.transform = gtsam_pose_to_transform_msg(latest_local_pose_);
   tfsToBroadcast.push_back(current_transform_msg);
 
@@ -878,7 +886,7 @@ void DecentralizedPGO::broadcast_tf_callback()
   // Publish as message latest estimate (optimized pose + odometry)
   geometry_msgs::msg::PoseStamped pose_msg;
   pose_msg.header.stamp = now;
-  pose_msg.header.frame_id = MAP_FRAME_ID(origin_robot_id_);
+  pose_msg.header.frame_id = MAP_FRAME_ID[origin_robot_id_];
   pose_msg.pose = gtsam_pose_to_msg(latest_optimized_pose_ * local_pose_at_latest_optimization_.inverse() * latest_local_pose_);
   optimized_pose_estimate_publisher_->publish(pose_msg);
 }

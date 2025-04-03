@@ -287,8 +287,12 @@ namespace cslam
     private:
         rclcpp::Node * node_;
         std::vector<std::string> robot_names_;
-        std::string odom_tf_reference_frame_;
         std::unique_ptr<tf2_ros::StaticTransformBroadcaster> static_tf_broadcaster_;
+
+        std::vector<std::string> MAP_FRAME_ID;
+        std::vector<std::string> CURRENT_FRAME_ID;
+        std::vector<std::string> LATEST_OPTIMIZED_FRAME_ID;
+        std::vector<std::string> LATEST_LOCAL_MAP;
 
         unsigned int max_nb_robots_, robot_id_, optimization_count_;
         bool enable_logs_;
@@ -300,7 +304,12 @@ namespace cslam
 
         bool enable_visualization_;
 
-        std::string base_frame_id_;
+        std::string base_frame_;
+        std::string kf_frame_;
+        std::string kf_opt_frame_;
+        std::string odom_frame_;
+        std::string map_frame_;
+
         geometry_msgs::msg::TransformStamped base_transform_; bool hasTransform_;
         gtsam::Pose3 base_transform_inv_;
         std::shared_ptr<tf2_ros::Buffer>

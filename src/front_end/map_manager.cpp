@@ -19,8 +19,6 @@
 #include <future>
 #include "rtabmap_msgs/msg/sensor_data.hpp"
 
-#define MAP_FRAME_ID(id) "robot" + std::to_string(id) + "/map"
-
 using namespace cslam;
 using namespace rtabmap;
 
@@ -52,8 +50,8 @@ MapManager::MapManager(rclcpp::NodeOptions ops) : Node("map_manager", ops.start_
     declare_parameter<std::string>("tf_prefix", "");
     declare_parameter<std::string>("frontend.base_frame", "base_link");
     declare_parameter<std::string>("frontend.odom_frame", "odom");
-    // declare_parameter<int>("max_nb_robots", 1);
     declare_parameter<int>("robot_id", 0);
+    declare_parameter<std::vector<std::string>>("robot_names", {"",""});
     declare_parameter<int>("frontend.map_manager_process_period_ms", 100);
     declare_parameter<std::string>("frontend.sensor_type", "stereo");
     declare_parameter<std::string>("frontend.sync_method", "exact");
@@ -95,7 +93,7 @@ MapManager::MapManager(rclcpp::NodeOptions ops) : Node("map_manager", ops.start_
                         map_manager_process_period_ms_);
       // Parameters
     get_parameter("frontend.inter_pnp_min_inliers", min_inliers_);
-    // get_parameter("max_nb_robots", max_nb_robots_);
+    get_parameter("robot_names", robot_names_);
     get_parameter("robot_id", robot_id_);
     get_parameter("frontend.max_queue_size", max_queue_size_);
     get_parameter("frontend.min_3d_keypoints", min_3d_keypoints_);
@@ -156,8 +154,8 @@ MapManager::MapManager(rclcpp::NodeOptions ops) : Node("map_manager", ops.start_
      
     }
 
-    calcOdom.header.frame_id = get_parameter("tf_prefix").as_string() + get_parameter("frontend.odom_frame").as_string();
-    calcOdom.child_frame_id = get_parameter("tf_prefix").as_string() + get_parameter("frontend.base_frame").as_string();
+    calcOdom.header.frame_id = robot_names_[robot_id_] + get_parameter("frontend.odom_frame").as_string();
+    calcOdom.child_frame_id = robot_names_[robot_id_] + get_parameter("frontend.base_frame").as_string();
     odomTf.header.frame_id = calcOdom.header.frame_id;
     odomTf.child_frame_id = calcOdom.child_frame_id;
     // Service to extract and publish local image descriptors to another robot

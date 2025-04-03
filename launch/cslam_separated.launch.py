@@ -32,7 +32,7 @@ def launch_setup(context, *args, **kwargs):
                                 ParameterFile(LaunchConfiguration('base_params').perform(context), allow_substs=True),
                                 ParameterFile(LaunchConfiguration('robot_params').perform(context), allow_substs=True),  {
                                     'robot_id': LaunchConfiguration('robot_id'),
-                                    'tf_prefix': LaunchConfiguration('tf_prefix'),
+                                    'robot_names': LaunchConfiguration('robot_names'),
                                 }
                             ],
                             output='screen',
@@ -49,7 +49,6 @@ def launch_setup(context, *args, **kwargs):
                                             'robot_names': LaunchConfiguration('robot_names'),
                                             'evaluation.enable_simulated_rendezvous': LaunchConfiguration('enable_simulated_rendezvous'),
                                             'evaluation.rendezvous_schedule_file': LaunchConfiguration('rendezvous_schedule_file'),
-                                            'tf_prefix': LaunchConfiguration('tf_prefix'),
                                        }
                                    ],
                                    output='screen',

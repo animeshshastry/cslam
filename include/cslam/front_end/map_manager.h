@@ -213,6 +213,8 @@ public:
         std::string sensor_type;
         std::unique_ptr<tf2_ros::TransformBroadcaster> tf_broadcaster_;
 
+        std::vector<std::string> robot_names_;
+
         rtabmap::Transform lastKFPose, currentLocalPose;
 
         std::map<int, std::shared_ptr<rtabmap::SensorData>> local_descriptors_map_;

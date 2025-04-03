@@ -9,7 +9,13 @@ namespace cslam {
       std::shared_ptr<DecentralizedPGO> manager;
       PoseGraphManagerComponent(rclcpp::NodeOptions ops) : Node("pose_graph_manager", ops.start_parameter_event_publisher(false).start_parameter_services(false))
       {
-       declare_parameter<std::vector<std::string>>("robot_names", {"",""});
+        declare_parameter<std::string>("frontend.sensor_base_frame", "base_link");
+        declare_parameter<std::string>("frontend.kf_frame", "kf");
+        declare_parameter<std::string>("frontend.kf_opt_frame", "kf_opt");
+        declare_parameter<std::string>("frontend.odom_frame", "odom");
+        declare_parameter<std::string>("frontend.map_frame", "map");
+
+       declare_parameter<std::vector<std::string>>("robot_names", {"a","b"});
        declare_parameter<int>("robot_id", 0);
        declare_parameter<int>("backend.pose_graph_optimization_start_period_ms", 1000);
        declare_parameter<int>("backend.pose_graph_optimization_loop_period_ms", 100);
@@ -22,7 +28,6 @@ namespace cslam {
        declare_parameter<bool>("evaluation.enable_gps_recording", false);
        declare_parameter<bool>("evaluation.enable_simulated_rendezvous", false);
        declare_parameter<std::string>("evaluation.rendezvous_schedule_file", "");
-       declare_parameter<std::string>("backend.odom_tf_reference_frame", "");
        declare_parameter<bool>("evaluation.enable_pose_timestamps_recording", false);
        declare_parameter<bool>("visualization.enable", false);
        declare_parameter<std::string>("frontend.sensor_base_frame_id", ""); // If empty we assume that the camera link is the base link
