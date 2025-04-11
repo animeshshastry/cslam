@@ -10,13 +10,17 @@ from launch_ros.actions import Node
 from launch_ros.descriptions import ParameterFile
 
 def launch_setup(context, *args, **kwargs):
+    
+    base_params = os.path.join(LaunchConfiguration('config_path').perform(context),LaunchConfiguration('base_config').perform(context))
+    robot_params = os.path.join(LaunchConfiguration('config_path').perform(context),LaunchConfiguration('robot_config').perform(context))
+    
     profile = LaunchConfiguration('profile').perform(context).lower() == 'true'
     loop_detection_node = Node(package='cslam',
                                executable='loop_closure_detection_node.py',
                                name='cslam_loop_closure_detection',
                                parameters=[
-                                   ParameterFile(LaunchConfiguration('base_params').perform(context), allow_substs=True),
-                                   ParameterFile(LaunchConfiguration('robot_params').perform(context), allow_substs=True), {
+                                   ParameterFile(base_params, allow_substs=True),
+                                   ParameterFile(robot_params, allow_substs=True), {
                                        'robot_id': LaunchConfiguration('robot_id'),
                                        'robot_names': LaunchConfiguration('robot_names'),
                                    }
@@ -29,8 +33,8 @@ def launch_setup(context, *args, **kwargs):
                             executable='map_profiler' if profile else 'map_manager',
                             name='cslam_map_manager',
                             parameters=[
-                                ParameterFile(LaunchConfiguration('base_params').perform(context), allow_substs=True),
-                                ParameterFile(LaunchConfiguration('robot_params').perform(context), allow_substs=True),  {
+                                ParameterFile(base_params, allow_substs=True),
+                                ParameterFile(robot_params, allow_substs=True), {
                                     'robot_id': LaunchConfiguration('robot_id'),
                                     'robot_names': LaunchConfiguration('robot_names'),
                                 }
@@ -43,8 +47,8 @@ def launch_setup(context, *args, **kwargs):
                                    executable='pose_graph_manager',
                                    name='cslam_pose_graph_manager',
                                    parameters=[
-                                       ParameterFile(LaunchConfiguration('base_params').perform(context), allow_substs=True),
-                                        ParameterFile(LaunchConfiguration('robot_params').perform(context), allow_substs=True),  {
+                                        ParameterFile(base_params, allow_substs=True),
+                                        ParameterFile(robot_params, allow_substs=True), {
                                             'robot_id': LaunchConfiguration('robot_id'),
                                             'robot_names': LaunchConfiguration('robot_names'),
                                             'evaluation.enable_simulated_rendezvous': LaunchConfiguration('enable_simulated_rendezvous'),
@@ -61,8 +65,8 @@ def launch_setup(context, *args, **kwargs):
                                 executable='global_descriptor',
                                 namespace=LaunchConfiguration('namespace'),
                                 parameters=[
-                                ParameterFile(LaunchConfiguration('base_params').perform(context), allow_substs=True),
-                                ParameterFile(LaunchConfiguration('robot_params').perform(context), allow_substs=True),
+                                ParameterFile(base_params, allow_substs=True),
+                                   ParameterFile(robot_params, allow_substs=True),
                                 ],
                                 arguments=['--ros-args','--log-level',LaunchConfiguration('log_level'),'--log-level','rcl:=INFO', '--log-level','rmw_zenoh_cpp:=FATAL'],
                                output='screen',
@@ -81,24 +85,11 @@ def generate_launch_description():
     return LaunchDescription([
         DeclareLaunchArgument('namespace', default_value='', description=''),
         DeclareLaunchArgument('robot_id', default_value='0', description=''),
-        DeclareLaunchArgument('tf_prefix', default_value=PythonExpression(['("', LaunchConfiguration('namespace'), '".strip("/") + "/").lstrip("/")'])),
-        DeclareLaunchArgument('robot_names', default_value="['quadrotor','warthog']", description=''),
+        DeclareLaunchArgument('robot_names', default_value='', description=''),
         DeclareLaunchArgument('profile', default_value='false', description=''),
-        DeclareLaunchArgument('config_path', default_value=os.path.join(get_package_share_directory('multiagent_launcher'), 'config', 'cslam_configs'), description=''),
+        DeclareLaunchArgument('config_path', default_value='', description=''),
         DeclareLaunchArgument('base_config', default_value='cslam_shared.yaml', description=''),
-        DeclareLaunchArgument('robot_config', default_value='quadrotor_rgbd.yaml', description=''),
-        DeclareLaunchArgument('base_params',
-                              default_value=[
-                                  LaunchConfiguration('config_path'),'/',
-                                  LaunchConfiguration('base_config')
-                              ],
-                              description=''),
-        DeclareLaunchArgument('robot_params',
-                        default_value=[
-                            LaunchConfiguration('config_path'),'/',
-                            LaunchConfiguration('robot_config')
-                        ],
-                        description=''),
+        DeclareLaunchArgument('robot_config', default_value='robot_rgbd.yaml', description=''),
         DeclareLaunchArgument(
             'launch_prefix_cslam',
             default_value='',

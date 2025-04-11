@@ -59,10 +59,10 @@ DecentralizedPGO::DecentralizedPGO(rclcpp::Node * node)
   node_->get_parameter("backend.solver", backend_linear_solver_);
 
   for (unsigned int i = 0; i < robot_names_.size(); i++) {
-    MAP_FRAME_ID.push_back(robot_names_[i] + map_frame_);
-    CURRENT_FRAME_ID.push_back(robot_names_[i] + kf_frame_);
-    LATEST_OPTIMIZED_FRAME_ID.push_back(robot_names_[i] + kf_opt_frame_);
-    LATEST_LOCAL_MAP.push_back(robot_names_[i] + odom_frame_);
+    MAP_FRAME_ID.push_back(robot_names_[i] + '/' + map_frame_);
+    CURRENT_FRAME_ID.push_back(robot_names_[i] + '/' + kf_frame_);
+    LATEST_OPTIMIZED_FRAME_ID.push_back(robot_names_[i] + '/' + kf_opt_frame_);
+    LATEST_LOCAL_MAP.push_back(robot_names_[i] + '/' + odom_frame_);
   }
 
   odometry_subscriber_ = node_->create_subscription<cslam_common_interfaces::msg::KeyframeOdom>(

@@ -47,9 +47,9 @@ MapManager::MapManager(rclcpp::NodeOptions ops) : Node("map_manager", ops.start_
     declare_parameter<int>("frontend.optFlow.iterations", 15);
     declare_parameter<int>("frontend.optFlow.windowSize", 11);
     declare_parameter<bool>("frontend.optFlow.usePVA", false);
-    declare_parameter<std::string>("tf_prefix", "");
     declare_parameter<std::string>("frontend.base_frame", "base_link");
     declare_parameter<std::string>("frontend.odom_frame", "odom");
+    declare_parameter<std::string>("frontend.map_frame", "map");
     declare_parameter<int>("robot_id", 0);
     declare_parameter<std::vector<std::string>>("robot_names", {"",""});
     declare_parameter<int>("frontend.map_manager_process_period_ms", 100);
@@ -154,8 +154,8 @@ MapManager::MapManager(rclcpp::NodeOptions ops) : Node("map_manager", ops.start_
      
     }
 
-    calcOdom.header.frame_id = robot_names_[robot_id_] + get_parameter("frontend.odom_frame").as_string();
-    calcOdom.child_frame_id = robot_names_[robot_id_] + get_parameter("frontend.base_frame").as_string();
+    calcOdom.header.frame_id = robot_names_[robot_id_] + '/' + get_parameter("frontend.odom_frame").as_string();
+    calcOdom.child_frame_id = robot_names_[robot_id_] + '/' + get_parameter("frontend.base_frame").as_string();
     odomTf.header.frame_id = calcOdom.header.frame_id;
     odomTf.child_frame_id = calcOdom.child_frame_id;
     // Service to extract and publish local image descriptors to another robot
@@ -949,7 +949,7 @@ void MapManager::send_visualization_pointcloud(const std::shared_ptr<rtabmap::Se
   keyframe_pointcloud_msg.keyframe_id = sensor_data->id();
   std_msgs::msg::Header header;
   header.stamp = now();
-  header.frame_id = get_parameter("tf_prefix").as_string() + get_parameter("frontend.map_frame").as_string();;
+  header.frame_id = robot_names_[robot_id_] + '/' + get_parameter("frontend.map_frame").as_string();;
   auto pointcloud_msg = create_colored_pointcloud(sensor_data, header);
 
   if (visualization_voxel_size_ > 0.0)
