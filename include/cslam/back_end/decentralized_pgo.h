@@ -10,6 +10,8 @@
 #include <gtsam/nonlinear/NonlinearFactorGraph.h>
 #include <gtsam/nonlinear/Values.h>
 #include <gtsam/slam/BetweenFactor.h>
+#include <gtsam_unstable/slam/BiasedGPSFactor.h>
+
 #include <tf2_ros/buffer.h>
 #include <tf2_ros/transform_listener.h>
 
@@ -37,6 +39,8 @@
 #include "cslam/back_end/gtsam_utils.h"
 #include "cslam/back_end/utils/logger.h"
 #include "cslam/back_end/utils/simulated_rendezvous.h"
+
+#include <GeographicLib/LocalCartesian.hpp>
 
 namespace cslam
 {
@@ -80,6 +84,14 @@ namespace cslam
          */
         void odometry_callback(
             const cslam_common_interfaces::msg::KeyframeOdom::UniquePtr msg);
+
+        /**
+         * @brief Receives raw gps msg
+         *
+         * @param msg
+         */
+        void gps_callback(
+            const sensor_msgs::msg::NavSatFix::SharedPtr msg);
 
         /**
          * @brief Receives inter-robot loop closures
@@ -303,6 +315,8 @@ namespace cslam
             visualization_period_ms_;
 
         bool enable_visualization_;
+        
+        bool enable_gravity_factor_;
 
         std::string base_frame_;
         std::string kf_frame_;
@@ -433,6 +447,10 @@ namespace cslam
 
         std::map<unsigned int, sensor_msgs::msg::NavSatFix> gps_data_;
         bool enable_gps_recording_;
+
+        // --- GPS conversion ---
+        GeographicLib::LocalCartesian geo_converter_;
+        bool geo_initialized_ = false;
 
         bool enable_simulated_rendezvous_;
         std::shared_ptr<SimulatedRendezVous> sim_rdv_;

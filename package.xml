@@ -51,7 +51,9 @@
   <build_depend>cslam_common_interfaces</build_depend>
   <build_depend>cslam_common_interfaces</build_depend>
   <build_depend>lightglue_onnx</build_depend>
-  
+  <build_depend>geographiclib</build_depend>
+  <build_depend>geographiclib-tools</build_depend>
+
   <exec_depend>rclcpp</exec_depend>
   <exec_depend>rclcpp_components</exec_depend>
   <exec_depend>rclpy</exec_depend>
@@ -86,7 +88,9 @@
   <exec_depend>diagnostic_msgs</exec_depend>
   <exec_depend>cslam_common_interfaces</exec_depend>
   <exec_depend>cslam_common_interfaces</exec_depend>
-  
+  <exec_depend>geographiclib</exec_depend>
+  <exec_depend>geographiclib-tools</exec_depend>
+
 
   <test_depend>ament_cmake_gtest</test_depend>
   <test_depend>ament_cmake_pytest</test_depend>

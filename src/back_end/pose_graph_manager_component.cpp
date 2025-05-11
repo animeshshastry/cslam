@@ -22,6 +22,7 @@ namespace cslam {
        declare_parameter<int>("backend.max_waiting_time_sec", 100);
        declare_parameter<bool>("backend.enable_broadcast_tf_frames", true);
        declare_parameter<std::string>("backend.solver", "CHOLMOD");
+       declare_parameter<bool>("backend.enable_gravity_factor", false);
        declare_parameter<double>("neighbor_management.heartbeat_period_sec", 1.0);
        declare_parameter<bool>("evaluation.enable_logs", false);
        declare_parameter<std::string>("evaluation.log_folder", "");

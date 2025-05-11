@@ -57,6 +57,9 @@ find_package(lightglue_onnx REQUIRED)
 find_package(RTABMap REQUIRED)
 find_package(CUDAToolkit REQUIRED)
 
+set(CMAKE_MODULE_PATH "${CMAKE_MODULE_PATH};/usr/share/cmake/geographiclib")
+find_package(GeographicLib REQUIRED)
+
 # Find GTSAM
 find_package(GTSAM CONFIG REQUIRED)
 
@@ -127,9 +130,10 @@ add_library(pose_graph_manager_component SHARED
 ament_target_dependencies(pose_graph_manager_component 
   ${Libraries}
   cslam_common_interfaces)
-target_link_libraries(pose_graph_manager_component gtsam)
+target_link_libraries(pose_graph_manager_component gtsam gtsam_unstable ${GeographicLib_LIBRARIES})
 target_include_directories(pose_graph_manager_component PUBLIC
   ${GTSAM_INCLUDE_DIR}
+  ${GeographicLib_INCLUDE_DIRS}
 )
 rclcpp_components_register_node(pose_graph_manager_component PLUGIN "cslam::PoseGraphManagerComponent" EXECUTABLE pose_graph_manager EXECUTOR MultiThreadedExecutor)
 set(node_plugins "${node_plugins}cslam::PoseGraphManagerComponent;$<TARGET_FILE:pose_graph_manager_component>\n")

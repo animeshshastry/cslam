@@ -32,6 +32,8 @@ DecentralizedPGO::DecentralizedPGO(rclcpp::Node * node)
                        pose_graph_optimization_loop_period_ms_);
   node_->get_parameter("backend.enable_broadcast_tf_frames",
                        enable_broadcast_tf_frames_);
+  node_->get_parameter("backend.enable_gravity_factor",
+                        enable_gravity_factor_);
   node_->get_parameter("neighbor_management.heartbeat_period_sec", heartbeat_period_sec_);
   node_->get_parameter("evaluation.enable_logs",
                       enable_logs_);
@@ -308,6 +310,24 @@ void DecentralizedPGO::odometry_callback(
     pose_graph_->push_back(factor);
   }
 
+  if (enable_gravity_factor_)
+  {
+    gtsam::Rot3 current_rotation = current_estimate.rotation();
+    Eigen::Matrix3d rot_matrix = current_rotation.matrix();
+    double roll, pitch, yaw;
+    pitch = std::asin(-rot_matrix(2, 0));
+    roll = std::atan2(rot_matrix(2, 1), rot_matrix(2, 2));
+    yaw = std::atan2(rot_matrix(1, 0), rot_matrix(0, 0));
+    gtsam::Rot3 gravity_alignment = gtsam::Rot3::RzRyRx(roll, pitch, yaw);
+    gtsam::Pose3 gravity_pose(gravity_alignment, current_estimate.translation());
+    gtsam::Vector6 sigmas;
+    sigmas << 0.05, 0.05, 999999.0, 999999.0, 999999.0, 999999.0;
+    gtsam::SharedNoiseModel gravity_noise = gtsam::noiseModel::Diagonal::Sigmas(sigmas);
+    gtsam::PriorFactor<gtsam::Pose3> gravity_factor(symbol, gravity_pose, gravity_noise);
+    pose_graph_->push_back(gravity_factor);
+    // RCLCPP_INFO(node_->get_logger(), "New gravity_factor (%f, %f, %f)", roll, pitch, yaw);
+  }
+
   if (enable_gps_recording_)
   {
     gps_data_.insert({msg->id, msg->gps});
@@ -320,6 +340,48 @@ void DecentralizedPGO::odometry_callback(
   if (enable_pose_timestamps_recording_)
   {
     logger_->log_pose_timestamp(symbol, msg->odom.header.stamp.sec, msg->odom.header.stamp.nanosec);
+  }
+}
+
+void DecentralizedPGO::gps_callback(const sensor_msgs::msg::NavSatFix::SharedPtr msg)
+{
+  // Initialize ENU converter if needed
+  if (!geo_initialized_) {
+    geo_converter_.Reset(msg->latitude, msg->longitude, msg->altitude);
+    geo_initialized_ = true;
+  }
+
+  // Convert LLA to ENU
+  double e, n, u;
+  geo_converter_.Forward(msg->latitude, msg->longitude, msg->altitude, e, n, u);
+  gtsam::Point3 enu_position(e, n, u);
+
+  // Use latest odometry symbol
+  gtsam::LabeledSymbol odom_symbol = latest_local_symbol_;
+
+  if (odom_symbol == gtsam::LabeledSymbol()) {
+    RCLCPP_WARN(node_->get_logger(), "No odometry received yet, skipping GPS factor.");
+    return;
+  }
+
+  // Bias symbol: same index and robot, different label
+  gtsam::LabeledSymbol bias_symbol('b', odom_symbol.chr(), odom_symbol.index());
+
+  // BiasedGPSFactor
+  gtsam::SharedNoiseModel gps_noise = gtsam::noiseModel::Isotropic::Sigma(3, 2.0);  // Tune
+  gtsam::BiasedGPSFactor gps_factor(odom_symbol, bias_symbol, enu_position, gps_noise);
+  pose_graph_->push_back(gps_factor);
+
+  // Add bias prior or smoothness
+  if (odom_symbol.index() == 0) {
+    gtsam::SharedNoiseModel prior_noise = gtsam::noiseModel::Isotropic::Sigma(3, 1.0);
+    gtsam::PriorFactor<gtsam::Point3> bias_prior(bias_symbol, gtsam::Point3(0, 0, 0), prior_noise);
+    pose_graph_->push_back(bias_prior);
+  } else {
+    gtsam::LabeledSymbol prev_bias_symbol('b', odom_symbol.chr(), odom_symbol.index() - 1);
+    gtsam::SharedNoiseModel smooth_noise = gtsam::noiseModel::Isotropic::Sigma(3, 0.2);
+    gtsam::BetweenFactor<gtsam::Point3> smooth_bias(prev_bias_symbol, bias_symbol, gtsam::Point3(0, 0, 0), smooth_noise);
+    pose_graph_->push_back(smooth_bias);
   }
 }
 
