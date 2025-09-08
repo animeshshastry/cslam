@@ -5,7 +5,7 @@
 #include <rclcpp/rclcpp.hpp>
 #include "cslam_common_interfaces/msg/keyframe_rgb.hpp"
 #include "cslam_common_interfaces/msg/global_descriptor.hpp"
-#include <cv_bridge/cv_bridge.hpp>
+#include <cv_bridge/cv_bridge.h>
 #include <onnxruntime_cxx_api.h>
 #include <cuda_runtime.h>
 #include <opencv2/cudaarithm.hpp>
