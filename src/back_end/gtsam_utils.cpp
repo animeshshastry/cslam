@@ -74,9 +74,11 @@ std::vector<cslam_common_interfaces::msg::PoseGraphEdge>
 gtsam_factors_to_msg(const gtsam::NonlinearFactorGraph &factors) {
   std::vector<cslam_common_interfaces::msg::PoseGraphEdge> edges;
   for (const auto &factor_ : factors) {
-    auto factor =
-        std::dynamic_pointer_cast<gtsam::BetweenFactor<gtsam::Pose3>>(
-            factor_);
+    // auto factor =
+    //     std::dynamic_pointer_cast<gtsam::BetweenFactor<gtsam::Pose3>>(
+    //         factor_);
+    auto factor = boost::dynamic_pointer_cast<gtsam::BetweenFactor<gtsam::Pose3>>(factor_);
+    
     if (factor) {
       cslam_common_interfaces::msg::PoseGraphEdge edge_msg;
 
@@ -90,8 +92,8 @@ gtsam_factors_to_msg(const gtsam::NonlinearFactorGraph &factors) {
       edge_msg.measurement = gtsam_pose_to_msg(factor->measured());
 
       gtsam::SharedNoiseModel model = factor->noiseModel();
-      auto noise =
-          std::dynamic_pointer_cast<gtsam::noiseModel::Diagonal>(model);
+      // auto noise = std::dynamic_pointer_cast<gtsam::noiseModel::Diagonal>(model);
+      auto noise = boost::dynamic_pointer_cast<gtsam::noiseModel::Diagonal>(model);
       auto sigmas = noise->sigmas();
       for (unsigned int i = 0; i < 6; i++) {
         edge_msg.noise_std[i] = sigmas[i];
@@ -128,7 +130,8 @@ gtsam::Pose3 odometry_msg_to_pose3(const nav_msgs::msg::Odometry &odom_msg) {
 
 gtsam::Values::shared_ptr values_msg_to_gtsam(
     const std::vector<cslam_common_interfaces::msg::PoseGraphValue> &msg) {
-  auto values = std::make_shared<gtsam::Values>();
+  // auto values = std::make_shared<gtsam::Values>();
+  auto values = boost::make_shared<gtsam::Values>();
   for (auto v : msg) {
     gtsam::Pose3 pose = pose_msg_to_gtsam(v.pose);
     gtsam::LabeledSymbol symbol(GRAPH_LABEL, ROBOT_LABEL(v.key.robot_id),
@@ -140,7 +143,8 @@ gtsam::Values::shared_ptr values_msg_to_gtsam(
 
 gtsam::NonlinearFactorGraph::shared_ptr edges_msg_to_gtsam(
     const std::vector<cslam_common_interfaces::msg::PoseGraphEdge> &msg) {
-  auto graph = std::make_shared<gtsam::NonlinearFactorGraph>();
+  // auto graph = std::make_shared<gtsam::NonlinearFactorGraph>();
+  auto graph = boost::make_shared<gtsam::NonlinearFactorGraph>();
   for (auto e : msg) {
     gtsam::Pose3 pose = pose_msg_to_gtsam(e.measurement);
     gtsam::LabeledSymbol symbol_from(

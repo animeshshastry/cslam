@@ -228,9 +228,8 @@ namespace cslam
             {
                 for (const auto &factor_ : *graph)
                 {
-                    auto factor =
-                        std::dynamic_pointer_cast<gtsam::BetweenFactor<gtsam::Pose3>>(
-                            factor_);
+                    // auto factor = std::dynamic_pointer_cast<gtsam::BetweenFactor<gtsam::Pose3>>(factor_);
+                    auto factor = boost::dynamic_pointer_cast<gtsam::BetweenFactor<gtsam::Pose3>>(factor_);
                     if (factor)
                     {
                         auto key1 = gtsam::LabeledSymbol(factor->key1());

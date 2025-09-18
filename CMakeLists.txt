@@ -130,7 +130,7 @@ add_library(pose_graph_manager_component SHARED
 ament_target_dependencies(pose_graph_manager_component 
   ${Libraries}
   cslam_common_interfaces)
-target_link_libraries(pose_graph_manager_component gtsam gtsam_unstable ${GeographicLib_LIBRARIES})
+target_link_libraries(pose_graph_manager_component gtsam ${GeographicLib_LIBRARIES})
 target_include_directories(pose_graph_manager_component PUBLIC
   ${GTSAM_INCLUDE_DIR}
   ${GeographicLib_INCLUDE_DIRS}

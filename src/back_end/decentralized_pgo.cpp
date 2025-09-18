@@ -91,9 +91,13 @@ DecentralizedPGO::DecentralizedPGO(rclcpp::Node * node)
                     std::placeholders::_1));
 
 
-  pose_graph_ = std::make_shared<gtsam::NonlinearFactorGraph>();
-  current_pose_estimates_ = std::make_shared<gtsam::Values>();
-  odometry_pose_estimates_ = std::make_shared<gtsam::Values>();
+  // pose_graph_ = std::make_shared<gtsam::NonlinearFactorGraph>();
+  // current_pose_estimates_ = std::make_shared<gtsam::Values>();
+  // odometry_pose_estimates_ = std::make_shared<gtsam::Values>();
+  pose_graph_ = boost::make_shared<gtsam::NonlinearFactorGraph>();
+  current_pose_estimates_ = boost::make_shared<gtsam::Values>();
+  odometry_pose_estimates_ = boost::make_shared<gtsam::Values>();
+
   tf_buffer_ = std::make_shared<tf2_ros::Buffer>(node_->get_clock());
   tf_listener_ = std::make_shared<tf2_ros::TransformListener>(*tf_buffer_);
 
@@ -518,7 +522,8 @@ cslam_common_interfaces::msg::PoseGraph::UniquePtr DecentralizedPGO::fill_pose_g
   auto out_msg = std::make_unique<cslam_common_interfaces::msg::PoseGraph>();
   out_msg->robot_id = robot_id_;
   out_msg->values = gtsam_values_to_msg(odometry_pose_estimates_);
-  auto graph = std::make_shared<gtsam::NonlinearFactorGraph>();
+  // auto graph = std::make_shared<gtsam::NonlinearFactorGraph>();
+  auto graph = boost::make_shared<gtsam::NonlinearFactorGraph>();
   graph->push_back(pose_graph_->begin(), pose_graph_->end());
 
   std::set<unsigned int> connected_robots;
@@ -699,8 +704,10 @@ DecentralizedPGO::aggregate_pose_graphs()
   // Check connectivity
   auto is_pose_graph_connected = connected_robot_pose_graph();
   // Aggregate graphs
-  auto graph = std::make_shared<gtsam::NonlinearFactorGraph>();
-  auto estimates = std::make_shared<gtsam::Values>();
+  // auto graph = std::make_shared<gtsam::NonlinearFactorGraph>();
+  // auto estimates = std::make_shared<gtsam::Values>();
+  auto graph = boost::make_shared<gtsam::NonlinearFactorGraph>();
+  auto estimates = boost::make_shared<gtsam::Values>();
   // Local graph
   graph->push_back(pose_graph_->begin(), pose_graph_->end());
   estimates->insert(*odometry_pose_estimates_);
@@ -751,9 +758,8 @@ DecentralizedPGO::aggregate_pose_graphs()
 
     for (const auto &factor_ : *other_robots_graph_and_estimates_[id].first)
     {
-      auto factor =
-          std::dynamic_pointer_cast<gtsam::BetweenFactor<gtsam::Pose3>>(
-              factor_);
+      // auto factor = std::dynamic_pointer_cast<gtsam::BetweenFactor<gtsam::Pose3>>(factor_);
+      auto factor = boost::dynamic_pointer_cast<gtsam::BetweenFactor<gtsam::Pose3>>(factor_);
       unsigned int robot0_id =
           ROBOT_ID(gtsam::LabeledSymbol(factor->key1()).label());
       unsigned int robot1_id =
@@ -842,7 +848,8 @@ void DecentralizedPGO::visualization_callback()
     out_msg->robot_id = robot_id_;
     out_msg->origin_robot_id = origin_robot_id_;
     out_msg->values = gtsam_values_to_msg(current_pose_estimates_);
-    auto graph = std::make_shared<gtsam::NonlinearFactorGraph>();
+    // auto graph = std::make_shared<gtsam::NonlinearFactorGraph>();
+    auto graph = boost::make_shared<gtsam::NonlinearFactorGraph>();
     graph->push_back(pose_graph_->begin(), pose_graph_->end());
 
     for (unsigned int i = 0; i < max_nb_robots_; i++)
